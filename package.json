@@ -21,7 +21,7 @@
         {
           "id": "devops-toolkit",
           "title": "Azure DevOps Toolkit",
-          "icon": "media/azure-devops.svg"
+          "icon": "$(azure-devops)"
         }
       ]
     },
@@ -30,7 +30,7 @@
         {
           "id": "devops-toolkit-view",
           "name": "Azure DevOps Toolkit",
-          "icon": "media/azure-devops.svg"
+          "icon": "$(azure-devops)"
         }
       ]
     },
@@ -44,7 +44,13 @@
       "view/item/context": [
         {
           "command": "devops-toolkit.clone",
-          "when": "view == devops-toolkit-view && viewItem == repos"
+          "when": "view == devops-toolkit-view && viewItem == repos",
+          "group": "inline"
+        },
+        {
+          "command": "devops-toolkit.refresh",
+          "when": "view == devops-toolkit-view && (viewItem == repos || viewItem == pipelines)",
+          "group": "inline"
         }
       ],
       "view/title": [
@@ -59,13 +65,14 @@
       {
         "command": "devops-toolkit.clone",
         "title": "Clone Repository",
-        "category": "Azure DevOps Toolkit"
+        "category": "Azure DevOps Toolkit",
+        "icon": "$(repo-clone)"
       },
       {
         "command": "devops-toolkit.refresh",
         "title": "Refresh",
         "category": "Azure DevOps Toolkit",
-        "icon": "media/refresh.svg"
+        "icon": "$(refresh)"
       }
     ],
     "configuration": {

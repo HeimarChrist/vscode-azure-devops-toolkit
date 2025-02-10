@@ -222,6 +222,7 @@ class Pipelines extends TreeItem {
 		super(label, collapsibleState);
 		this.iconPath = new ThemeIcon('github-action');
 	}
+	contextValue = 'pipelines';
 }
 
 class PipelineBuild extends TreeItem {
