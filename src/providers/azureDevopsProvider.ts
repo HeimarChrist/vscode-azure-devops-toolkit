@@ -88,7 +88,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 				//new ProjectSection(AzureDevopsBoardPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsReposPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsPipelinesPath, element.client, TreeItemCollapsibleState.Collapsed, element),
-				new ProjectSection(AzureDevopsTestPlansPath, element.client, TreeItemCollapsibleState.Collapsed, element)
+				//new ProjectSection(AzureDevopsTestPlansPath, element.client, TreeItemCollapsibleState.Collapsed, element)
 			];
 		}
 		if (element instanceof Organization) {

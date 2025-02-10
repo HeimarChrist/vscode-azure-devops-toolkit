@@ -6,4 +6,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-- Initial release
+
+## [1.0.0] - 2025-02-10
+
+### Added 
+
+- Track and Open Pull Requests in all Azure Devops Projects.
+- Track and View the Results of the last 5 builds of a given pipeline.
+- Initial release.
