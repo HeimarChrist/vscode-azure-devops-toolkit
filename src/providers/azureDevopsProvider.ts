@@ -40,10 +40,15 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 		}
 		if (element instanceof Repos) {
 			const projectName = element.parent!.parent!.label;
-			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { status: PullRequestStatus.Active, repositoryId: element.repoId }));
+			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { repositoryId: element.repoId}));
 			return pullRequests.then((prs) => {
 				Logger.info(`Found ${prs.length} pull requests in ${element.label}`);
-				return prs.map((pr) => new PullRequests(pr.title!, element.client, Uri.parse(pr.url!, true), TreeItemCollapsibleState.None, element));
+				return prs.map((pr) => new PullRequests(pr.title!, element.client, Uri.parse(pr.url!, true), TreeItemCollapsibleState.None, element, 
+				{
+					command: 'vscode.open',
+					title: 'Open',
+					arguments: [Uri.parse(`${element.webUrl!}/pullrequest/${pr.pullRequestId}` , true)]
+				}));
 			});
 		}
 		if (element instanceof ProjectSection) {
@@ -62,7 +67,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					const repositories = element.client.getGitApi().then((api) => api.getRepositories(projectName));
 					return repositories.then((repos) => {
 						Logger.info(`Found ${repos.length} repositories`);
-						return repos.map((repo) => new Repos(repo.name!, element.client, repo.id!, repo.url!, TreeItemCollapsibleState.Collapsed, element));
+						return repos.map((repo) => new Repos(repo.name!, element.client, repo.id!, repo.url!, repo.webUrl!, TreeItemCollapsibleState.Collapsed, element));
 					});
 				}
 				case AzureDevopsPipelinesPath: {
@@ -175,6 +180,7 @@ export class Repos extends TreeItem {
 		public readonly client: WebApi,
 		public readonly repoId: string,
 		public readonly repoUrl: string,
+		public readonly webUrl: string,
 		public readonly collapsibleState: TreeItemCollapsibleState,
 		public readonly parent?: ProjectSection,
 		public readonly command?: Command
@@ -214,7 +220,7 @@ class Pipelines extends TreeItem {
 		public readonly command?: Command
 	) {
 		super(label, collapsibleState);
-		this.iconPath = new ThemeIcon('pipeline');
+		this.iconPath = new ThemeIcon('github-action');
 	}
 }
 
@@ -235,10 +241,10 @@ class PipelineBuild extends TreeItem {
 				this.iconPath = new ThemeIcon('circle-slash');
 				break;
 			case BuildResult.Failed:
-				this.iconPath = new ThemeIcon('testing-failed-icon');
+				this.iconPath = new ThemeIcon('testing-error-icon');
 				break;
 			case BuildResult.PartiallySucceeded:
-				this.iconPath = new ThemeIcon('testing-error-icon');
+				this.iconPath = new ThemeIcon('warning');
 				break;
 			case BuildResult.Succeeded:
 				this.iconPath = new ThemeIcon('testing-passed-icon');
