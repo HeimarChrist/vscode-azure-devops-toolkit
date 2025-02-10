@@ -3,6 +3,7 @@
   "displayName": "Azure DevOps Toolkit",
   "description": "A open source toolkit for interacting with Azure DevOps directly from Visual Studio Code.",
   "author": "christh",
+  "repository": "https://github.com/HeimarChrist/vscode-azure-devops-toolkit",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.96.0"
@@ -15,12 +16,76 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devops-toolkit",
+          "title": "Azure DevOps Toolkit",
+          "icon": "media/azure-devops.svg"
+        }
+      ]
+    },
+    "views": {
+      "devops-toolkit": [
+        {
+          "id": "devops-toolkit-view",
+          "name": "Azure DevOps Toolkit",
+          "icon": "media/azure-devops.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "devops-toolkit-view",
+        "contents": "No Azure DevOps Organizations found in Settings [learn more](https://dev.azure.com/).\n[Add Organization](command:workbench.action.openSettings2)"
+      }
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "devops-toolkit.clone",
+          "when": "view == devops-toolkit-view && viewItem == repos"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "devops-toolkit.refresh",
+          "when": "view == devops-toolkit-view",
+          "group": "navigation"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "azure-devops-toolkit.helloWorld",
-        "title": "Hello World"
+        "command": "devops-toolkit.clone",
+        "title": "Clone Repository",
+        "category": "Azure DevOps Toolkit"
+      },
+      {
+        "command": "devops-toolkit.refresh",
+        "title": "Refresh",
+        "category": "Azure DevOps Toolkit",
+        "icon": "media/refresh.svg"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Azure DevOps Toolkit",
+      "properties": {
+        "azure-devops-toolkit.organizations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "examples": [
+              "https://dev.azure.com/Org1",
+              "https://dev.azure.com/Org2"
+            ],
+            "pattern": "^https:\\/\\/dev\\.azure\\.com\\/[a-zA-Z0-9_-]+$"
+          },
+          "scope": "resource",
+          "description": "Azure DevOps organizations URLs"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -46,5 +111,8 @@
     "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
+  },
+  "dependencies": {
+    "azure-devops-node-api": "^14.1.0"
   }
 }
