@@ -43,7 +43,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { repositoryId: element.repoId}));
 			return pullRequests.then((prs) => {
 				Logger.info(`Found ${prs.length} pull requests in ${element.label}`);
-				return prs.map((pr) => new PullRequests(pr.title!, element.client, Uri.parse(pr.url!, true), TreeItemCollapsibleState.None, element, 
+				return prs.map((pr) => new PullRequests(pr.title!, element.client, TreeItemCollapsibleState.None, element, 
 				{
 					command: 'vscode.open',
 					title: 'Open',
@@ -198,13 +198,11 @@ class PullRequests extends TreeItem {
 	constructor(
 		public readonly label: string,
 		public readonly client: WebApi,
-		public readonly resourceUri: Uri,
 		public readonly collapsibleState: TreeItemCollapsibleState,
 		public readonly parent?: Repos,
 		public readonly command?: Command
 	) {
 		super(label, collapsibleState);
-		this.resourceUri = resourceUri;
 		this.iconPath = new ThemeIcon('git-pull-request');
 	}
 	contextValue = 'pullRequests';
