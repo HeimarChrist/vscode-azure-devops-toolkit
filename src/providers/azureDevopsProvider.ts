@@ -40,18 +40,19 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 		}
 		if (element instanceof Repos) {
 			const projectName = element.parent!.parent!.label;
-			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { repositoryId: element.repoId}));
+			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { repositoryId: element.repoId }));
 			return pullRequests.then((prs) => {
 				Logger.info(`Found ${prs.length} pull requests in ${element.label}`);
-				return prs.map((pr) => new PullRequests(pr.title!, element.client, TreeItemCollapsibleState.None, element, 
-				{
-					command: 'vscode.open',
-					title: 'Open',
-					arguments: [Uri.parse(`${element.webUrl!}/pullrequest/${pr.pullRequestId}` , true)]
-				}));
+				return prs.map((pr) => new PullRequests(pr.title!, element.client, TreeItemCollapsibleState.None, element,
+					{
+						command: 'vscode.open',
+						title: 'Open',
+						arguments: [Uri.parse(`${element.webUrl!}/pullrequest/${pr.pullRequestId}`, true)]
+					}));
 			});
 		}
 		if (element instanceof ProjectSection) {
+			const projectName = element.parent!.label;
 			switch (element.label) {
 				case AzureDevopsOverviewPath: {
 					return [new TreeItem('Wiki', TreeItemCollapsibleState.None)];
@@ -63,7 +64,6 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					];
 				}
 				case AzureDevopsReposPath: {
-					const projectName = element.parent?.label;
 					const repositories = element.client.getGitApi().then((api) => api.getRepositories(projectName));
 					return repositories.then((repos) => {
 						Logger.info(`Found ${repos.length} repositories`);
@@ -71,8 +71,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					});
 				}
 				case AzureDevopsPipelinesPath: {
-					const projectName = element.parent?.label;
-					const pipelines = element.client.getPipelinesApi().then((api) => api.listPipelines(projectName!));
+					const pipelines = element.client.getPipelinesApi().then((api) => api.listPipelines(projectName));
 					return pipelines.then((builds) => {
 						Logger.info(`Found ${builds.length} pipelines`);
 						return builds.map((build) => new Pipelines(build.name!, element.client, TreeItemCollapsibleState.Collapsed, element));
