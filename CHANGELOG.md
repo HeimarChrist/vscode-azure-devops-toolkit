@@ -7,6 +7,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 
+## [1.0.1] - 2025-02-12
+
+### Fixed
+
+- Clone repository Command
+
 ## [1.0.0] - 2025-02-10
 
 ### Added 
