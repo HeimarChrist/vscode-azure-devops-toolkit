@@ -2,8 +2,7 @@ import { Command, EventEmitter, Event, TreeDataProvider, TreeItem, TreeItemColla
 import { WebApi } from "azure-devops-node-api";
 import Logger from "../Utils/Logger";
 import { EXTENSION_NAME } from "../Utils/Constants";
-import { PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
-import { BuildResult, BuildStatus } from "azure-devops-node-api/interfaces/BuildInterfaces";
+import { BuildResult } from "azure-devops-node-api/interfaces/BuildInterfaces";
 
 const AzureDevopsOverviewPath = "Overview";
 const AzureDevopsBoardPath = "Boards";
@@ -67,7 +66,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					const repositories = element.client.getGitApi().then((api) => api.getRepositories(projectName));
 					return repositories.then((repos) => {
 						Logger.info(`Found ${repos.length} repositories`);
-						return repos.map((repo) => new Repos(repo.name!, element.client, repo.id!, repo.url!, repo.webUrl!, TreeItemCollapsibleState.Collapsed, element));
+						return repos.map((repo) => new Repos(repo.name!, element.client, repo.id!, repo.webUrl!, TreeItemCollapsibleState.Collapsed, element));
 					});
 				}
 				case AzureDevopsPipelinesPath: {
@@ -178,7 +177,6 @@ export class Repos extends TreeItem {
 		public readonly label: string,
 		public readonly client: WebApi,
 		public readonly repoId: string,
-		public readonly repoUrl: string,
 		public readonly webUrl: string,
 		public readonly collapsibleState: TreeItemCollapsibleState,
 		public readonly parent?: ProjectSection,

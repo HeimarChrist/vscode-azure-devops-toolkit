@@ -12,8 +12,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	const azureDevopsProvider = new AzureDevopsProvider(session);
 	const treeView = vscode.window.createTreeView('devops-toolkit-view', { treeDataProvider: azureDevopsProvider });
 	context.subscriptions.push(treeView);
-	context.subscriptions.push(vscode.commands.registerCommand('devops-toolkit.clone', async (item : Repos) => { vscode.commands.executeCommand('git.clone', item.repoUrl); }));
-	context.subscriptions.push(vscode.commands.registerCommand('devops-toolkit.refresh', async (item) => { azureDevopsProvider.refresh(item); }));
+	vscode.commands.registerCommand('devops-toolkit.clone', async (item : Repos) => { vscode.commands.executeCommand('git.clone', item.webUrl); });
+	vscode.commands.registerCommand('devops-toolkit.refresh', async (item) => { azureDevopsProvider.refresh(item); });
 }
 
 // This method is called when your extension is deactivated
