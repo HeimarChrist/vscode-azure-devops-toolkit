@@ -6,6 +6,17 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.2] - 2025-02-13
+
+### Added 
+
+- TestPlan/TestSuite/TestCase tracking and views
+- Added new Open In Browser Command
+
+### Fixed
+
+- Broken commands for refresh and clone
+
 
 ## [1.0.1] - 2025-02-12
 

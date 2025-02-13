@@ -1,4 +1,4 @@
-import { Command, EventEmitter, Event, TreeDataProvider, TreeItem, TreeItemCollapsibleState, ProviderResult, workspace, Uri, AuthenticationSession, ThemeIcon } from "vscode";
+import { Command, EventEmitter, Event, TreeDataProvider, TreeItem, TreeItemCollapsibleState, ProviderResult, workspace, Uri, AuthenticationSession, ThemeIcon, CancellationToken } from "vscode";
 import { WebApi } from "azure-devops-node-api";
 import Logger from "../Utils/Logger";
 import { EXTENSION_NAME } from "../Utils/Constants";
@@ -29,6 +29,47 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 
 	getChildren(element?: TreeItem | undefined): ProviderResult<TreeItem[]> {
 
+		if (element instanceof TestSuite) {
+			const projectName = element.parent!.parent!.parent!.label;
+			const testPlanId = element.parent!.testPlanId;
+			const testSuiteId = element.testSuiteId;
+			const testCases = element.client.getTestPlanApi().then((api) => api.getTestCaseList(projectName, testPlanId, testSuiteId));
+			return testCases.then((cases) => {
+				let azureTestCases: TestCase[] = [];
+				if (!cases) {
+					Logger.info(`No test suites found for ${element.label}`);
+					return azureTestCases;
+				}
+				azureTestCases = cases.map((testCase) => new TestCase(testCase.workItem?.name!, element.client,  `${element.client.serverUrl}/${projectName}/_workitems/edit/${testCase.workItem?.id}`, testCase.workItem?.id!, TreeItemCollapsibleState.None, element));
+				while (cases.continuationToken) {
+					const nextCases = element.client.getTestPlanApi().then((api) => api.getTestCaseList(projectName, testPlanId, testSuiteId, cases.continuationToken));
+					nextCases.then((next) => {
+						azureTestCases = azureTestCases.concat(next.map((testCase) => new TestCase(testCase.workItem?.name!, element.client, `${element.client.serverUrl}/${projectName}/_workitems/edit/${testCase.workItem?.id}`, testCase.workItem?.id!, TreeItemCollapsibleState.None, element)));
+					});
+				}
+				Logger.info(`Found ${cases.length} test cases in ${testSuiteId}`);
+				return azureTestCases;
+			});
+		}
+		if (element instanceof TestPlan) {
+			const projectName = element.parent!.parent!.label;
+			const testSuites = element.client.getTestPlanApi().then((api) => api.getTestSuitesForPlan(projectName, element.testPlanId!));
+			return testSuites.then((suites) => {
+				let azureTestSuites: TestSuite[] = [];
+				if (!suites) {
+					Logger.info(`No test suites found for ${element.label}`);
+					return azureTestSuites;
+				}
+				azureTestSuites = suites.map((suite) => new TestSuite(suite.name!, element.client, suite.id!, TreeItemCollapsibleState.Collapsed, element));
+				while (suites.continuationToken) {
+					const nextSuites = element.client.getTestPlanApi().then((api) => api.getTestSuitesForPlan(projectName, element.testPlanId!, undefined, suites.continuationToken));
+					nextSuites.then((next) => {
+						azureTestSuites = azureTestSuites.concat(next.map((suite) => new TestSuite(suite.name!, element.client, suite.id!, TreeItemCollapsibleState.Collapsed, element)));
+					});
+				}
+				return azureTestSuites;
+			});
+		}
 		if (element instanceof Pipelines) {
 			const projectName = element.parent!.parent!.label;
 			const pipelines = element.client.getBuildApi().then((api) => api.getBuilds(projectName, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 5));
@@ -42,12 +83,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 			const pullRequests = element.client.getGitApi().then((api) => api.getPullRequestsByProject(projectName, { repositoryId: element.repoId }));
 			return pullRequests.then((prs) => {
 				Logger.info(`Found ${prs.length} pull requests in ${element.label}`);
-				return prs.map((pr) => new PullRequests(pr.title!, element.client, TreeItemCollapsibleState.None, element,
-					{
-						command: 'vscode.open',
-						title: 'Open',
-						arguments: [Uri.parse(`${element.webUrl!}/pullrequest/${pr.pullRequestId}`, true)]
-					}));
+				return prs.map((pr) => new PullRequests(pr.title!, element.client, `${element.webUrl}/pullrequest/${pr.pullRequestId}`, TreeItemCollapsibleState.None, element));
 			});
 		}
 		if (element instanceof ProjectSection) {
@@ -77,7 +113,11 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					});
 				}
 				case AzureDevopsTestPlansPath: {
-					return [new TreeItem('Test Plans', TreeItemCollapsibleState.None)];
+					const testPlans = element.client.getTestPlanApi().then((api) => api.getTestPlans(projectName));
+					return testPlans.then((plans) => {
+						Logger.info(`Found ${plans.length} test plans`);
+						return plans.map((plan) => new TestPlan(plan.name!, element.client, TreeItemCollapsibleState.Collapsed, plan.id!, element));
+					});
 				}
 			}
 		}
@@ -87,7 +127,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 				//new ProjectSection(AzureDevopsBoardPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsReposPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsPipelinesPath, element.client, TreeItemCollapsibleState.Collapsed, element),
-				//new ProjectSection(AzureDevopsTestPlansPath, element.client, TreeItemCollapsibleState.Collapsed, element)
+				new ProjectSection(AzureDevopsTestPlansPath, element.client, TreeItemCollapsibleState.Collapsed, element)
 			];
 		}
 		if (element instanceof Organization) {
@@ -190,11 +230,12 @@ export class Repos extends TreeItem {
 	contextValue = 'repos';
 }
 
-class PullRequests extends TreeItem {
+export class PullRequests extends TreeItem {
 
 	constructor(
 		public readonly label: string,
 		public readonly client: WebApi,
+		public readonly webUrl: string,
 		public readonly collapsibleState: TreeItemCollapsibleState,
 		public readonly parent?: Repos,
 		public readonly command?: Command
@@ -247,4 +288,55 @@ class PipelineBuild extends TreeItem {
 				break;
 		}
 	}
+}
+
+
+class TestPlan extends TreeItem {
+
+	constructor(
+		public readonly label: string,
+		public readonly client: WebApi,
+		public readonly testPlanId: number,
+		public readonly collapsibleState: TreeItemCollapsibleState,
+		public readonly parent?: ProjectSection,
+		public readonly command?: Command
+	) {
+		super(label, collapsibleState);
+		this.iconPath = new ThemeIcon('beaker');
+	}
+	contextValue = 'testPlan';
+}
+
+class TestSuite extends TreeItem {
+
+	constructor(
+		public readonly label: string,
+		public readonly client: WebApi,
+		public readonly testSuiteId: number,
+		public readonly collapsibleState: TreeItemCollapsibleState,
+		public readonly parent?: TestPlan,
+		public readonly command?: Command
+	) {
+		super(label, collapsibleState);
+		this.iconPath = new ThemeIcon('folder-active');
+	}
+	contextValue = 'testSuite';
+}
+
+export class TestCase extends TreeItem {
+
+	constructor(
+		public readonly label: string,
+		public readonly client: WebApi,
+		public readonly webUrl: string,
+		public readonly testCaseId: number,
+		public readonly collapsibleState: TreeItemCollapsibleState,
+		public readonly parent?: TestSuite,
+		public readonly command?: Command
+	) {
+		super(label, collapsibleState);
+		this.iconPath = new ThemeIcon('note');
+		this.tooltip = `#${this.testCaseId}`;
+	}
+	contextValue = 'testCase';
 }
