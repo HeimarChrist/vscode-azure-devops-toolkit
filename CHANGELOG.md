@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-02-17
+
+### Added 
+
+- Sprint workItem trackings and opening
+
+### Fixed 
+
+- Invalid session when tree has been open for an extended period 
+
 ## [1.0.2] - 2025-02-13
 
 ### Added 
