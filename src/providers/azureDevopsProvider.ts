@@ -1,7 +1,7 @@
-import { Command, EventEmitter, Event, TreeDataProvider, TreeItem, TreeItemCollapsibleState, ProviderResult, workspace, Uri, AuthenticationSession, ThemeIcon, CancellationToken } from "vscode";
+import { Command, EventEmitter, Event, TreeDataProvider, TreeItem, TreeItemCollapsibleState, ProviderResult, workspace, Uri, AuthenticationSession, ThemeIcon, CancellationToken, authentication } from "vscode";
 import { WebApi } from "azure-devops-node-api";
 import Logger from "../Utils/Logger";
-import { EXTENSION_NAME } from "../Utils/Constants";
+import { EXTENSION_NAME, MicrosoftProviderId, MicrosoftScopes } from "../Utils/Constants";
 import { BuildResult } from "azure-devops-node-api/interfaces/BuildInterfaces";
 
 const AzureDevopsOverviewPath = "Overview";
@@ -16,11 +16,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 	private _onDidChangeTreeData: EventEmitter<TreeItem | undefined | void> = new EventEmitter<TreeItem | undefined | void>();
 	readonly onDidChangeTreeData: Event<TreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
-	private Session: AuthenticationSession;
-	private azureClient: WebApi | undefined;
-
-	constructor(session: AuthenticationSession) {
-		this.Session = session;
+	constructor() {
 	}
 
 	getTreeItem(element: TreeItem): TreeItem | Thenable<TreeItem> {
@@ -29,6 +25,20 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 
 	getChildren(element?: TreeItem | undefined): ProviderResult<TreeItem[]> {
 
+		if (element instanceof Sprint) {
+			const projectName = element.parent!.parent!.label;
+			const workItems = element.client.getWorkApi().then((api) => api.getIterationWorkItems({ projectId: projectName, teamId: element.teamId }, element.sprintId.toString()));
+			return workItems.then(async (work) => {
+				const workItemsIds: number[] = work.workItemRelations?.map((wi) => wi.target!.id!) || [];
+				if (workItemsIds.length === 0) {
+					Logger.info(`No work items found for ${element.label}`);
+					return [];
+				}
+				const workApi = await element.client.getWorkItemTrackingApi();
+				const workItems = await workApi.getWorkItemsBatch({ ids: workItemsIds, fields: ['System.Title'] }, projectName);
+				return workItems.map((wi) => new WorkItem(`${wi.id} - ${wi.fields!["System.Title"]}`, element.client, wi.id!, `${element.client.serverUrl}/${projectName}/_workitems/edit/${wi.id!}`, TreeItemCollapsibleState.None, element));
+			});
+		}
 		if (element instanceof TestSuite) {
 			const projectName = element.parent!.parent!.parent!.label;
 			const testPlanId = element.parent!.testPlanId;
@@ -40,7 +50,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					Logger.info(`No test suites found for ${element.label}`);
 					return azureTestCases;
 				}
-				azureTestCases = cases.map((testCase) => new TestCase(testCase.workItem?.name!, element.client,  `${element.client.serverUrl}/${projectName}/_workitems/edit/${testCase.workItem?.id}`, testCase.workItem?.id!, TreeItemCollapsibleState.None, element));
+				azureTestCases = cases.map((testCase) => new TestCase(testCase.workItem?.name!, element.client, `${element.client.serverUrl}/${projectName}/_workitems/edit/${testCase.workItem?.id}`, testCase.workItem?.id!, TreeItemCollapsibleState.None, element));
 				while (cases.continuationToken) {
 					const nextCases = element.client.getTestPlanApi().then((api) => api.getTestCaseList(projectName, testPlanId, testSuiteId, cases.continuationToken));
 					nextCases.then((next) => {
@@ -93,10 +103,19 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					return [new TreeItem('Wiki', TreeItemCollapsibleState.None)];
 				}
 				case AzureDevopsBoardPath: {
-					return [
-						new TreeItem('Work Items', TreeItemCollapsibleState.None),
-						new TreeItem('Sprint (Current)', TreeItemCollapsibleState.None)
-					];
+					const teams = element.client.getCoreApi().then((api) => api.getTeams(projectName));
+					return teams.then(async (team) => {
+						const sprints: Sprint[] = [];
+						for (const t of team) {
+							const sprint = await element.client.getWorkApi().then((api) => api.getTeamIterations({ projectId: t.projectId, teamId: t.id }, 'current'));
+							if (!sprint) {
+								Logger.info(`No sprints found for ${t.name}`);
+								continue;
+							}
+							sprints.push(...sprint.map((s) => new Sprint(`${s.name!} - ${t.name}`, element.client, s.id!, t.id!, s.url!, TreeItemCollapsibleState.Collapsed, element)));
+						}
+						return sprints;
+					});
 				}
 				case AzureDevopsReposPath: {
 					const repositories = element.client.getGitApi().then((api) => api.getRepositories(projectName));
@@ -124,7 +143,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 		if (element instanceof Project) {
 			return [
 				//new ProjectSection(AzureDevopsOverviewPath, element.client, TreeItemCollapsibleState.Collapsed, element),
-				//new ProjectSection(AzureDevopsBoardPath, element.client, TreeItemCollapsibleState.Collapsed, element),
+				new ProjectSection(AzureDevopsBoardPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsReposPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsPipelinesPath, element.client, TreeItemCollapsibleState.Collapsed, element),
 				new ProjectSection(AzureDevopsTestPlansPath, element.client, TreeItemCollapsibleState.Collapsed, element)
@@ -142,11 +161,13 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 		if (element === undefined) {
 			const configOrganizations = workspace.getConfiguration(EXTENSION_NAME).get('organizations', []) as string[];
 			Logger.info(`Found ${configOrganizations.length} configured organizations`);
-			return configOrganizations.map((org) => {
-				const client = this.getAzureClient(org);
+			return Promise.all(configOrganizations.map(async (org) => {
+				let session = authentication.getSession(MicrosoftProviderId, MicrosoftScopes, { createIfNone: true });
+				const microsoftSession = await session;
+				const client = WebApi.createWithBearerToken(org, microsoftSession!.accessToken);
 				const match = org.match(OrganizationNameRegex);
 				return new Organization(match![1], org, client, TreeItemCollapsibleState.Collapsed);
-			});
+			}));
 		} else {
 			Logger.warn(`Unexpected element type: ${element.constructor.name}`);
 			return [];
@@ -155,13 +176,6 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 
 	refresh(element: TreeItem): void {
 		this._onDidChangeTreeData.fire(element);
-	}
-
-	private getAzureClient(organizationUrl: string): WebApi {
-		if (this.azureClient === undefined) {
-			this.azureClient = WebApi.createWithBearerToken(organizationUrl, this.Session.accessToken);
-		}
-		return this.azureClient;
 	}
 }
 
@@ -339,4 +353,40 @@ export class TestCase extends TreeItem {
 		this.tooltip = `#${this.testCaseId}`;
 	}
 	contextValue = 'testCase';
+}
+
+class Sprint extends TreeItem {
+
+	constructor(
+		public readonly label: string,
+		public readonly client: WebApi,
+		public readonly sprintId: string,
+		public readonly teamId: string,
+		public readonly webUrl: string,
+		public readonly collapsibleState: TreeItemCollapsibleState,
+		public readonly parent?: ProjectSection,
+		public readonly command?: Command
+	) {
+		super(label, collapsibleState);
+		this.iconPath = new ThemeIcon('list-tree');
+	}
+	contextValue = 'sprint';
+}
+
+export class WorkItem extends TreeItem {
+
+	constructor(
+		public readonly label: string,
+		public readonly client: WebApi,
+		public readonly workItemId: number,
+		public readonly webUrl: string,
+		public readonly collapsibleState: TreeItemCollapsibleState,
+		public readonly parent?: Sprint,
+		public readonly command?: Command
+	) {
+		super(label, collapsibleState);
+		this.iconPath = new ThemeIcon('book');
+		this.tooltip = `#${this.workItemId}`;
+	}
+	contextValue = 'workItem';
 }
