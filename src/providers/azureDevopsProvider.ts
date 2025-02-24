@@ -35,8 +35,9 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					return [];
 				}
 				const workApi = await element.client.getWorkItemTrackingApi();
-				const workItems = await workApi.getWorkItemsBatch({ ids: workItemsIds, fields: ['System.Title'] }, projectName);
-				return workItems.map((wi) => new WorkItem(`${wi.id} - ${wi.fields!["System.Title"]}`, element.client, wi.id!, `${element.client.serverUrl}/${projectName}/_workitems/edit/${wi.id!}`, TreeItemCollapsibleState.None, element));
+				let workItems = await workApi.getWorkItemsBatch({ ids: workItemsIds, fields: ['System.Title', 'System.WorkItemType'] }, projectName);
+				workItems = workItems.filter((wi) => wi.fields!["System.WorkItemType"] !== 'Task');
+				return workItems.map((wi) => new WorkItem(`${wi.id} - ${wi.fields!["System.Title"]}`, element.client, wi.id!, `${element.client.serverUrl}/${projectName}/_workitems/edit/${wi.id!}`, wi.fields!["System.WorkItemType"], TreeItemCollapsibleState.None, element));
 			});
 		}
 		if (element instanceof TestSuite) {
@@ -135,7 +136,7 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					const testPlans = element.client.getTestPlanApi().then((api) => api.getTestPlans(projectName));
 					return testPlans.then((plans) => {
 						Logger.info(`Found ${plans.length} test plans`);
-						return plans.map((plan) => new TestPlan(plan.name!, element.client, TreeItemCollapsibleState.Collapsed, plan.id!, element));
+						return plans.map((plan) => new TestPlan(plan.name!, element.client, plan.id!, TreeItemCollapsibleState.Collapsed, element));
 					});
 				}
 			}
@@ -380,13 +381,21 @@ export class WorkItem extends TreeItem {
 		public readonly client: WebApi,
 		public readonly workItemId: number,
 		public readonly webUrl: string,
+		public readonly type: string,
 		public readonly collapsibleState: TreeItemCollapsibleState,
 		public readonly parent?: Sprint,
 		public readonly command?: Command
 	) {
 		super(label, collapsibleState);
-		this.iconPath = new ThemeIcon('book');
 		this.tooltip = `#${this.workItemId}`;
+		if (type === 'Bug') {
+			this.iconPath = new ThemeIcon('bug');
+		}
+		else {
+			this.iconPath = new ThemeIcon('book');
+		}
+
 	}
+
 	contextValue = 'workItem';
 }

@@ -6,6 +6,17 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.4] - 2025-02-24
+
+### Changes
+
+- Displays all but tasks in the sprint tree view with respective icons
+
+### Fixed
+
+- Bug which caused testSuites not to render
+- Removed commands from the command pallet
+
 ## [1.0.3] - 2025-02-17
 
 ### Added 

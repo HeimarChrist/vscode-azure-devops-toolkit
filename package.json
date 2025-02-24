@@ -4,7 +4,7 @@
   "description": "A open source toolkit for interacting with Azure DevOps directly from Visual Studio Code.",
   "publisher": "christh",
   "repository": "https://github.com/HeimarChrist/vscode-azure-devops-toolkit",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -63,6 +63,20 @@
           "command": "devops-toolkit.refresh",
           "when": "view == devops-toolkit-view",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "devops-toolkit.clone",
+          "when": "false"
+        },
+        {
+          "command": "devops-toolkit.refresh",
+          "when": "false"
+        },
+        {
+          "command": "devops-toolkit.openInBrowser",
+          "when": "false"
         }
       ]
     },
