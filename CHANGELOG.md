@@ -6,6 +6,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-03-18
+
+### Changes
+
+- Display AssignedTo user name in the task
+- Updated packages to latest version 
+- Updated [ReadME.md](ReadME.md) file 
+
+
 ## [1.0.4] - 2025-02-24
 
 ### Changes

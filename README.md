@@ -5,23 +5,20 @@ The Azure DevOps Toolkit is a Visual Studio Code extension designed to streamlin
 ## Features
 
 - Boards
-   - View sprint/kanban board (Future)
-   - Open individual board items (Future)
+   - View sprint/kanban board ✅
+   - Open individual board items ✅
 - Repositories
-   - Quick clone of source code (Future)
-   - List of open pull requests (In progress)
+   - Quick clone of source code ✅
+   - List of open pull requests ✅
 - Pipelines
-   - Monitor pipeline runs (Future)
-   - Monitor release pipelines (Future)
-   - Dashboard (Future)
+   - Monitor pipeline runs ✅
+   - Monitor release pipelines 🔮
+   - Dashboard 🔮
 - Test plan 
-   - Manage Test plans (Future)
-   - Create Test Suite (Future)
-   - Write Test Cases (Future)
-   - Sync Automated test cases to test cases (Migration in progress)
-
-## Requirements
-TBD
+   - Manage Test plans 🔮
+   - Create Test Suite 🔮
+   - Write Test Cases 🔮
+   - Sync Automated test cases to test cases 🏃‍➡️
 
 ## Getting Started
 
