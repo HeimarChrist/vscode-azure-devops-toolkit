@@ -35,9 +35,12 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 					return [];
 				}
 				const workApi = await element.client.getWorkItemTrackingApi();
-				let workItems = await workApi.getWorkItemsBatch({ ids: workItemsIds, fields: ['System.Title', 'System.WorkItemType'] }, projectName);
+				let workItems = await workApi.getWorkItemsBatch({ ids: workItemsIds, fields: ['System.Title', 'System.WorkItemType', 'System.AssignedTo'] }, projectName);
 				workItems = workItems.filter((wi) => wi.fields!["System.WorkItemType"] !== 'Task');
-				return workItems.map((wi) => new WorkItem(`${wi.id} - ${wi.fields!["System.Title"]}`, element.client, wi.id!, `${element.client.serverUrl}/${projectName}/_workitems/edit/${wi.id!}`, wi.fields!["System.WorkItemType"], TreeItemCollapsibleState.None, element));
+				return workItems.map((wi) => {
+					const assignedTo = wi.fields!['System.AssignedTo'] ? wi.fields!['System.AssignedTo'].displayName : "Unassigned";
+					return new WorkItem(`${wi.id} - ${wi.fields!["System.Title"]} - ${assignedTo}`, element.client, wi.id!, `${element.client.serverUrl}/${projectName}/_workitems/edit/${wi.id!}`, wi.fields!["System.WorkItemType"], TreeItemCollapsibleState.None, element);
+				});
 			});
 		}
 		if (element instanceof TestSuite) {
