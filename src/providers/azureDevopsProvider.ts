@@ -159,6 +159,8 @@ export class AzureDevopsProvider implements TreeDataProvider<TreeItem> {
 			const projectCollection = coreApi.then((api) => api.getProjects());
 			return projectCollection.then((projects) => {
 				Logger.info(`Found ${projects.length} projects in ${element.label}`);
+				var excludeProjects = workspace.getConfiguration(EXTENSION_NAME).get('excludedProjects', []) as string[];
+				projects = projects.filter((project) => !excludeProjects.includes(project.name!));
 				return projects.map((project) => new Project(project.name!, element.client, TreeItemCollapsibleState.Collapsed));
 			});
 		}

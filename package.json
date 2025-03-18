@@ -4,7 +4,7 @@
   "description": "A open source toolkit for interacting with Azure DevOps directly from Visual Studio Code.",
   "publisher": "christh",
   "repository": "https://github.com/HeimarChrist/vscode-azure-devops-toolkit",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -37,7 +37,7 @@
     "viewsWelcome": [
       {
         "view": "devops-toolkit-view",
-        "contents": "No Azure DevOps Organizations found in Settings [learn more](https://dev.azure.com/).\n[Add Organization](command:workbench.action.openSettings2)"
+        "contents": "No Azure DevOps Organizations found in Settings [learn more](https://dev.azure.com/).\n[Add Organization](command:workbench.action.openSettings?%22azure-devops-toolkit%22)"
       }
     ],
     "menus": {
@@ -115,6 +115,18 @@
           },
           "scope": "resource",
           "description": "Azure DevOps organizations URLs"
+        },
+        "azure-devops-toolkit.excludedProjects": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "examples": [
+              "Project1",
+              "Project2"
+            ]
+          },
+          "scope": "resource",
+          "description": "Projects to exclude from the view"
         }
       }
     }
