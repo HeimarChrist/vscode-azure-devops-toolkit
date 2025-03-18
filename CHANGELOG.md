@@ -6,6 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.6] - 2025-03-18
+
+### Changes
+
+- Added Project Exclusion Setting
+- Fixed Add Organization button
+
 ## [1.0.5] - 2025-03-18
 
 ### Changes
