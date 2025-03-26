@@ -6,6 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-03-27
+
+### Changes
+
+- Minor refactoring for maintainability 
+- Added test case synchronization for single test cases and the corresponding test automation in C# DevKit
+
 ## [1.0.6] - 2025-03-18
 
 ### Changes
