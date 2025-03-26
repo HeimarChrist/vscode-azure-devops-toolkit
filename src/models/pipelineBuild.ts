@@ -27,5 +27,7 @@ export class PipelineBuild extends TreeItem {
                 this.iconPath = new ThemeIcon('testing-passed-icon');
                 break;
         }
+
+        this.contextValue = 'pipelineBuild';
     }
 }
